@@ -1,0 +1,34 @@
+{
+  "name": "final-project-final-project-team-16",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "directories": {
+    "lib": "lib"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/osu-cs493-sp22/final-project-final-project-team-16.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/osu-cs493-sp22/final-project-final-project-team-16/issues"
+  },
+  "homepage": "https://github.com/osu-cs493-sp22/final-project-final-project-team-16#readme",
+  "devDependencies": {
+    "nodemon": "^2.0.16"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "express": "^4.18.1",
+    "jsonwebtoken": "^8.5.1",
+    "mongodb": "^4.6.0",
+    "morgan": "^1.10.0",
+    "redis": "^4.1.0"
+  }
+}
