@@ -4,8 +4,11 @@ const { getDbInstance } = require('../lib/mongo')
 const { extractValidFields } = require('../lib/validation')
 
 const SubmissionsSchema = {
-    courseId: {required: true},
-    title: {required: true},
-    name: {required: true},
-    due: {required: true},
+    assugnmentId: {required: true},
+    studentId: {required: true},
+    timestamp: {required: true},
+    grade: {required: true},
+    submission: {required: true}
 }
+
+exports.SubmissionsSchema = SubmissionsSchema
