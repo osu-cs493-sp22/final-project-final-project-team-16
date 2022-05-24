@@ -1,16 +1,16 @@
 const { ObjectId } = require('mongodb')
 //const bcrypt = require ('bycryptjs')
 const { extractValidFields } = require('../lib/validation')
-const { getDBReference } = require('../lib/mongo')
+const { getDbReference } = require('../lib/mongo')
 
 const AssignmentSchema = {
-    assignment_id: { required: true },
     course_id: { required: true },
     title: { required: true },
     points: { required: true },
     due_date: { required: true },
-    submission_list: { required: true }
+    submission_list: { required: false }
 }
+
 exports.AssignmentSchema = AssignmentSchema
 
 
