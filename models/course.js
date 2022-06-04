@@ -64,3 +64,14 @@ async function updateCourse(id, course) {
     collection.update({_id: new ObjectId(id)}, { $set: course})
 }
 exports.updateCourse = updateCourse
+
+async function deleteCourse(id) {
+    const db = getDbReference()
+    const collection = db.collection('courses')
+    console.log(new ObjectId(id))
+    const results = await collection.deleteOne ({
+        _id: newObjectId(id)
+    })
+    return result.deletedCount > 0
+}
+exports.deleteCourse = deleteCourse

@@ -2,7 +2,7 @@ const router = require('express').Router()
 exports.router = router;
 
 const { validateAgainstSchema } = require('../lib/validation')
-const { courseSchema, getCoursesPage, insertNewCourse, getCourseById, updateCourse} = require('../models/course')
+const { courseSchema, getCoursesPage, insertNewCourse, getCourseById, updateCourse, deleteCourse} = require('../models/course')
 const { router } = require('./assignments')
 
 router.get('/', async (req, res) => {
@@ -56,6 +56,9 @@ router.get('/:courseId', async function (req, res, next) {
 })
 
 router.patch('/:courseId', async function (req, res, next) {
+    //
+    // Validate user here
+    //
     try {
         const updateSuccessful = await updateCourse(req.params.courseId, req.body);
         if (updateSuccessful) {
@@ -66,6 +69,18 @@ router.patch('/:courseId', async function (req, res, next) {
             })
         }
     } catch(err) {
+        next()
+    }
+})
+
+router.delete('/:courseId', async function (req, res, next) {
+    //
+    // validate user here
+    //
+    const deleteSucess = await deleteCourse(req.params.courseId)
+    if (deleteSucess) {
+        res.status(204).end()
+    } else {
         next()
     }
 })
