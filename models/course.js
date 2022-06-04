@@ -19,7 +19,7 @@ async function getCoursesPage(page) {
     const count = await collection.countDocuments()
 
     const pageSize = 10
-    const lastPage = math.ceil(count / pageSize)
+    const lastPage = Math.ceil(count / pageSize)
     page = page > lastPage ? lastPage : page
     page = page < 1 ? 1 : page
     const offset = (page - 1) * pageSize
@@ -40,7 +40,7 @@ async function getCoursesPage(page) {
 exports.getCoursesPage = getCoursesPage
 
 async function insertNewCourse(course) {
-    const db = getDbReference
+    const db = getDbReference()
     const collection = db.collection('courses')
     course = extractValidFields(course, courseSchema)
     const result = await collection.insertOne(course)
@@ -49,11 +49,11 @@ async function insertNewCourse(course) {
 exports.insertNewCourse = insertNewCourse
 
 async function getCourseById(id) {
-    const db = getDbInstance()
+    const db = getDbReference()
     const collection = db.collection('courses')
-    const results = await collection.aggregate([
-        { $match: {_id: new ObjectId(id)}}
-    ]).toArray
+    const results = await collection.find(
+        { _id: new ObjectId(id)}
+    ).toArray()
     return results[0]
 }
 exports.getCourseById = getCourseById
@@ -61,7 +61,8 @@ exports.getCourseById = getCourseById
 async function updateCourse(id, course) {
     const db = getDbReference()
     const collection = db.collection('courses')
-    collection.update({_id: new ObjectId(id)}, { $set: course})
+    const results = await collection.updateOne({_id: new ObjectId(id)}, { $set: course})
+    console.log(results.updatedCount)
 }
 exports.updateCourse = updateCourse
 
@@ -69,8 +70,8 @@ async function deleteCourse(id) {
     const db = getDbReference()
     const collection = db.collection('courses')
     console.log(new ObjectId(id))
-    const results = await collection.deleteOne ({
-        _id: newObjectId(id)
+    const result = await collection.deleteOne ({
+        _id: new ObjectId(id)
     })
     return result.deletedCount > 0
 }

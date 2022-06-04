@@ -3,7 +3,6 @@ exports.router = router;
 
 const { validateAgainstSchema } = require('../lib/validation')
 const { courseSchema, getCoursesPage, insertNewCourse, getCourseById, updateCourse, deleteCourse} = require('../models/course')
-const { router } = require('./assignments')
 
 router.get('/', async (req, res) => {
     try {
@@ -36,7 +35,7 @@ router.post('/', async function (req, res, next) {
         res.status(201).json({
             id: id,
             links: {
-                course: `/course/${id}`
+                course: `/courses/${id}`
             }
         })
     } else {
@@ -64,9 +63,11 @@ router.patch('/:courseId', async function (req, res, next) {
         if (updateSuccessful) {
             res.status(200).json({
                 links: {
-                    course: `/course/${req.params.courseId}`
+                    course: `/courses/${req.params.courseId}`
                 }
             })
+        } else {
+            next()
         }
     } catch(err) {
         next()
