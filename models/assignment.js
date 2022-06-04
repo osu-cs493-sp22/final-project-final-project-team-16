@@ -29,15 +29,28 @@ exports.insertNewAssignment = async function (assignment) {
   /*
   * Fetch an Assignment from the DB based on Assignment ID.
   */
-  exports.getAssignmentById = async function (id) {
-    const db = getDbReference()
-    const collection = db.collection('assignments')
-    if (!ObjectId.isValid(id)) {
-      return null
-    } else {
-      const results = await collection
-      .find({ _id: new ObjectId(id) })
-      .toArray()
-      return results[0]
-    }
+exports.getAssignmentById = async function (id) {
+  const db = getDbReference()
+  const collection = db.collection('assignments')
+  if (!ObjectId.isValid(id)) {
+    return null
+  } else {
+    const results = await collection
+    .find({ _id: new ObjectId(id) })
+    .toArray()
+    return results[0]
   }
+}
+
+exports.modifyAssignmentById = async function (id, updateAssignment){
+  const db = getDbInstance()
+  const collection = db.collection('assignments')
+  collection.update({_id: new ObjectId(id)}, { $set: updateAssignment})
+}
+
+exports.deleteAssignment = async function (id){
+  const db = getDbInstance()
+  const collection = db.collection('assignments')
+  collection.deleteOne({_id: new ObjectId(id)})
+}
+
