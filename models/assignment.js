@@ -7,8 +7,7 @@ const AssignmentSchema = {
     course_id: { required: true },
     title: { required: true },
     points: { required: true },
-    due_date: { required: true },
-    submission_list: { required: false }
+    due_date: { required: true }
 }
 
 exports.AssignmentSchema = AssignmentSchema
@@ -54,3 +53,11 @@ exports.deleteAssignment = async function (id){
   collection.deleteOne({_id: new ObjectId(id)})
 }
 
+exports.getAssignmentSubmissions = async function(id){
+  const db = getDbInstance()
+  const bucket = new GridFSBucket(db, {bucketName: 'submissions'})
+  const results =  await bucket.find({ "metadata.assignmentId": id })
+  .toArray()
+
+  return results
+}
