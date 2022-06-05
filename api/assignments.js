@@ -41,7 +41,7 @@ router.get('/:id', async function (req, res, next) { // Fetch data about a speci
     }
 })
 
-router.patch('/:id', requireAuthentication,  async function (req, res) { // Update data for a specific Assignment
+router.patch('/:id', requireAuthentication,  async function (req, res, next) { // Update data for a specific Assignment
     try{
         const assignmentid = req.body.assignmentid
         const updateAssignment = req.body;
@@ -56,7 +56,7 @@ router.patch('/:id', requireAuthentication,  async function (req, res) { // Upda
     }
 })
 
-router.delete('/', requireAuthentication,  async function (req, res) { // Remove a specific Assignent from the database
+router.delete('/', requireAuthentication,  async function (req, res, next) { // Remove a specific Assignent from the database
     try{
         const assignmentid = req.body.assignmentid
         await deleteAssignment(assignmentid)
