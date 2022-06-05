@@ -10,17 +10,6 @@ const { AssignmentSchema, insertNewAssignment, getAssignmentById, modifyAssignme
 const { SubmissionsSchema, saveSubmissionFile } = require('../models/submission')
 const { requireAuthentication } = require('../lib/auth')
 
-
-router.get('/:assignmentid', async function (req, res, next) { // Fetch Data about a specific Assignment
-    try{
-        const assignmentid = req.params.assignmentid
-        const assignment = await getAssignmentById(assignmentid)
-        res.status(200).json(assignment);
-      }catch(err){
-        next()
-      }
-})
-
 router.post('/', requireAuthentication,  async function (req, res, next) { // Create a new Assignment
     if (validateAgainstSchema(req.body, AssignmentSchema)) {
         try{
