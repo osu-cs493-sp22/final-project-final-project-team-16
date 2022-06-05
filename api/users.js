@@ -17,16 +17,29 @@ router.post('/', async function (req, res, next) {
         //console.log("body===", req.body);
         try{
             var user = extractValidFields(req.body, UserSchema);
-            user.password = await bcrypt.hash(user.password, 8);
-            const id = await insertNewUser(user)
-            res.status(201).json({
-                id: id, 
-                links: {
-                    user: `/user/${id}`
-                }
-            });
+            const db = getDbReference()
+            const email = req.body.email
+            const collection = db.collection('users')
+            const results = await collection
+            .find({ email: email })
+            .toArray()
+            if (results[0]){
+                res.status(400).json({
+                    error: "email used"
+                });
+            }
+            else{
+                user.password = await bcrypt.hash(user.password, 8);
+                const id = await insertNewUser(user)
+                res.status(201).json({
+                    id: id, 
+                    links: {
+                        user: `/user/${id}`
+                    }
+                });
+            }
         }catch(err){
-            //console.log("===error", err);
+            console.log("===error", err);
             next()
         }
     } else {
@@ -38,18 +51,16 @@ router.post('/', async function (req, res, next) {
   
 
   router.post('/login', async function (req, res, next) {
-    if (req.body && req.body.id && req.body.password) {
+    if (req.body && req.body.email && req.body.password) {
         const db = getDbReference()
         const collection = db.collection('users')
-        const id = req.body.id
+        const email = req.body.email
         var user = null
-        if (!ObjectId.isValid(id)) {
-            user = null
-        } else {
-            const results = await collection
-            .find({ _id: new ObjectId(id) })
-            .toArray()
-            user = results[0]
+        const results = await collection
+        .find({ email: email })
+        .toArray()
+        user = results[0]
+        if (user) {
             const authenticated = user && await bcrypt.compare(
                 req.body.password,
                 user.password
@@ -63,10 +74,14 @@ router.post('/', async function (req, res, next) {
                 error: "Invalid credentials"
             })
         }
-    }
+        } else {
+            res.status(400).send({
+                error: "Request needs correct user ID and password."
+            })
+        }
     } else {
         res.status(400).send({
-            error: "Request needs user ID and password."
+            error: "Request needs correct user ID and password."
         })
     }
   })
