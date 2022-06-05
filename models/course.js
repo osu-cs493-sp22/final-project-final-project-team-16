@@ -62,7 +62,6 @@ async function updateCourse(id, course) {
     const db = getDbReference()
     const collection = db.collection('courses')
     const results = await collection.updateOne({_id: new ObjectId(id)}, { $set: course})
-    console.log(results.updatedCount)
 }
 exports.updateCourse = updateCourse
 
