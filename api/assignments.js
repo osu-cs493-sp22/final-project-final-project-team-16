@@ -1,7 +1,8 @@
 
 const bcrypt = require('bcryptjs')
 const fs = require('fs/promises')
-
+const crypto = require('crypto')
+const multer = require('multer')
 const router = require('express').Router()
 exports.router = router;
 
@@ -9,6 +10,26 @@ const { validateAgainstSchema, extractValidFields } = require('../lib/validation
 const { AssignmentSchema, insertNewAssignment, getAssignmentById, modifyAssignmentById, deleteAssignment, getAssignmentSubmissions } = require('../models/assignment')
 const { SubmissionsSchema, saveSubmissionFile } = require('../models/submission')
 const { requireAuthentication } = require('../lib/auth')
+
+const fileTypes = {
+    'application/pdf': 'pdf',
+    'image/jpeg': 'jpg',
+    'image/png': 'png'
+  }
+  
+  const upload = multer({
+    storage: multer.diskStorage({
+      destination: `${__dirname}/uploads`,
+      filename: function(req,file,callback){
+        const ext = fileTypes[file.mimetype]
+        const filename = crypto.pseudoRandomBytes(16).toString('hex')
+        callback(null,`${filename}.${ext}`)
+      }
+    }),
+    fileFilter: function(req,file,callback){
+      callback(null,!!fileTypes[file.mimetype])
+    }
+  })
 
 router.post('/', requireAuthentication, async function (req, res, next) { // Create a new Assignment
     if (validateAgainstSchema(req.body, AssignmentSchema)) {
@@ -76,7 +97,7 @@ router.get('/:id/submissions', requireAuthentication,  async function (req, res,
     }
 })
 
-router.post('/:id/submissions', async function (req, res) { // Create a new Submission for an Assignment (student)
+router.post('/:id/submissions', upload.single('file'),async function (req, res) { // Create a new Submission for an Assignment (student)
     console.log("==req.file:", req.file)
     console.log("==req.body:", req.body)
     if(req.file && validateAgainstSchema(req.body, SubmissionsSchema)){

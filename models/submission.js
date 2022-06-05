@@ -67,6 +67,7 @@ async function saveSubmissionFile (submission){
       studentId: submission.studentId,
       timestamp: submission.timestamp,
       grade: submission.grade,
+      file: `/media/uploads/${submission.filename}`,
       mimetype: submission.mimetype
     }
     const uploadStream = bucket.openUploadStream(submission.filename, {
