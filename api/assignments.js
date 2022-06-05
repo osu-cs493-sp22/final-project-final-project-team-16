@@ -35,7 +35,11 @@ router.get('/:id',  async function (req, res, next) { // Fetch data about a spec
     try{
         const assignmentid = req.params.id
         const assignment = await getAssignmentById(assignmentid)
-        res.status(200).json(assignment)
+        if(assignment){
+            res.status(200).json(assignment)
+        }else{
+            next()
+        }
     }catch(err){
         next()
     }
