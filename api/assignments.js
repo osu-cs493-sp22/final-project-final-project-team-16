@@ -10,7 +10,7 @@ const { AssignmentSchema, insertNewAssignment, getAssignmentById, modifyAssignme
 const { SubmissionsSchema, saveSubmissionFile } = require('../models/submission')
 const { requireAuthentication } = require('../lib/auth')
 
-router.post('/', requireAuthentication,  async function (req, res, next) { // Create a new Assignment
+router.post('/', async function (req, res, next) { // Create a new Assignment
     if (validateAgainstSchema(req.body, AssignmentSchema)) {
         try{
             const assignment = extractValidFields(req.body, AssignmentSchema);
@@ -33,18 +33,19 @@ router.post('/', requireAuthentication,  async function (req, res, next) { // Cr
 
 router.get('/:id', async function (req, res, next) { // Fetch data about a specific Assignment
     try{
-        const assignmentid = req.params.assignmentid
+        console.log("GETTING ASSIGNMENTS")
+        const assignmentid = req.params.id
         const assignment = await getAssignmentById(assignmentid)
-        res.status(200).json(assignment);
+        res.status(200).json(assignment)
     }catch(err){
-    next()
+        next()
     }
 })
 
-router.patch('/:id', requireAuthentication,  async function (req, res, next) { // Update data for a specific Assignment
+router.patch('/:id',  async function (req, res, next) { // Update data for a specific Assignment
     try{
-        const assignmentid = req.body.assignmentid
-        const updateAssignment = req.body;
+        const assignmentid = req.params.id
+        const updateAssignment = req.body
         await modifyAssignmentById(assignmentid, updateAssignment)
         res.status(200).json({
             links: {
@@ -56,9 +57,9 @@ router.patch('/:id', requireAuthentication,  async function (req, res, next) { /
     }
 })
 
-router.delete('/', requireAuthentication,  async function (req, res, next) { // Remove a specific Assignent from the database
+router.delete('/:id',  async function (req, res, next) { // Remove a specific Assignent from the database
     try{
-        const assignmentid = req.body.assignmentid
+        const assignmentid = req.params.id
         await deleteAssignment(assignmentid)
     }catch(err){
         next()
@@ -66,7 +67,7 @@ router.delete('/', requireAuthentication,  async function (req, res, next) { // 
     res.status(204).end();
 })
 
-router.get('/:id/submissions', requireAuthentication,  async function (req, res, next) { // Fetch the list of all Submissions for an Assignment
+router.get('/:id/submissions',  async function (req, res, next) { // Fetch the list of all Submissions for an Assignment
     try{
         const assignmentid = req.params.id
         const submissions = await getAssignmentSubmissions(assignmentid)

@@ -42,19 +42,19 @@ exports.getAssignmentById = async function (id) {
 }
 
 exports.modifyAssignmentById = async function (id, updateAssignment){
-  const db = getDbInstance()
+  const db = getDbReference()
   const collection = db.collection('assignments')
   collection.update({_id: new ObjectId(id)}, { $set: updateAssignment})
 }
 
 exports.deleteAssignment = async function (id){
-  const db = getDbInstance()
+  const db = getDbReference()
   const collection = db.collection('assignments')
   collection.deleteOne({_id: new ObjectId(id)})
 }
 
 exports.getAssignmentSubmissions = async function(id){
-  const db = getDbInstance()
+  const db = getDbReference()
   const bucket = new GridFSBucket(db, {bucketName: 'submissions'})
   const results =  await bucket.find({ "metadata.assignmentId": id })
   .toArray()
