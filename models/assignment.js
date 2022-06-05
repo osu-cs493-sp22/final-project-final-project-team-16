@@ -4,10 +4,10 @@ const { extractValidFields } = require('../lib/validation')
 const { getDbReference } = require('../lib/mongo')
 
 const AssignmentSchema = {
-    course_id: { required: true },
+    courseId: { required: true },
     title: { required: true },
     points: { required: true },
-    due_date: { required: true }
+    dueDate: { required: true }
 }
 
 exports.AssignmentSchema = AssignmentSchema
@@ -54,7 +54,7 @@ exports.deleteAssignment = async function (id){
 }
 
 exports.getAssignmentSubmissions = async function(id){
-  const db = getDbInstance()
+  const db = getDbReference()
   const bucket = new GridFSBucket(db, {bucketName: 'submissions'})
   const results =  await bucket.find({ "metadata.assignmentId": id })
   .toArray()
