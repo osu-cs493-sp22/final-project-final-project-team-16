@@ -1,10 +1,13 @@
 
 const bcrypt = require('bcryptjs')
+const fs = require('fs/promises')
+
 const router = require('express').Router()
 exports.router = router;
 
 const { validateAgainstSchema, extractValidFields } = require('../lib/validation')
-const { AssignmentSchema, insertNewAssignment, getAssignmentById, modifyAssignmentById, deleteAssignment } = require('../models/assignment')
+const { AssignmentSchema, insertNewAssignment, getAssignmentById, modifyAssignmentById, deleteAssignment, getAssignmentSubmissions } = require('../models/assignment')
+const { SubmissionsSchema, saveSubmissionFile } = require('../models/submission')
 const { requireAuthentication } = require('../lib/auth')
 
 
@@ -18,7 +21,7 @@ router.get('/:assignmentid', async function (req, res, next) { // Fetch Data abo
       }
 })
 
-router.post('/', async function (req, res, next) { // Create a new Assignment
+router.post('/', requireAuthentication,  async function (req, res, next) { // Create a new Assignment
     if (validateAgainstSchema(req.body, AssignmentSchema)) {
         try{
             const assignment = extractValidFields(req.body, AssignmentSchema);
@@ -64,20 +67,51 @@ router.patch('/:id', async function (req, res, next) { // Update data for a spec
     }
 })
 
-router.delete('/', async function (req, res) { // Remove a specific Assignent from the database
+router.delete('/', requireAuthentication,  async function (req, res) { // Remove a specific Assignent from the database
     try{
         const assignmentid = req.body.assignmentid
         await deleteAssignment(assignmentid)
-      }catch(err){
+    }catch(err){
         next()
-      }
-      res.status(204).end();
+    }
+    res.status(204).end();
 })
 
-// router.get('/:id/submissions', async function (req, res, next) { // Fetch the list of all Submissions for an Assignment
+router.get('/:id/submissions', requireAuthentication,  async function (req, res, next) { // Fetch the list of all Submissions for an Assignment
+    try{
+        const assignmentid = req.params.id
+        const submissions = await getAssignmentSubmissions(assignmentid)
+        res.status(200).json(submissions);
+    }catch(err){
+        next()
+    }
+})
 
-// })
-
-// router.post('/:id/submissions', async function (req, res) { // Create a new Submission for an Assignment (student)
-    
-// })
+router.post('/:id/submissions', async function (req, res) { // Create a new Submission for an Assignment (student)
+    console.log("==req.file:", req.file)
+    console.log("==req.body:", req.body)
+    if(req.file && validateAgainstSchema(req.body, SubmissionsSchema)){
+      try{
+        const submission = {
+          assignmentId: req.body.assignmentId,
+          studentId: req.body.studentId,
+          timestamp: req.body.timestamp,
+          grade: req.body.grade,
+          path: req.file.path,
+          filename: req.file.filename,
+          mimetype: req.file.mimetype
+        }
+        //const id = await saveFileInfo(photo)
+        const id = await saveSubmissionFile(submission)
+        await fs.unlink(req.file.path)
+  
+        res.status(200).send({id: id})
+      }catch(err){
+        next(err)
+      }
+    }else{
+      res.status(400).send({
+        err: 'Request body needs an "image"'
+      })
+    }
+})
