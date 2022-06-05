@@ -52,9 +52,9 @@ router.get('/:id', async function (req, res, next) { // Fetch data about a speci
     }
 })
 
-router.patch('/:id', requireAuthentication,  async function (req, res) { // Update data for a specific Assignment
+router.patch('/:id', async function (req, res, next) { // Update data for a specific Assignment
     try{
-        const assignmentid = req.body.assignmentid
+        const assignmentid = req.parms.id;
         const updateAssignment = req.body;
         await modifyAssignmentById(assignmentid, updateAssignment)
         res.status(200).json({
