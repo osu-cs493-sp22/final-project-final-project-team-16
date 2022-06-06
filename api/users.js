@@ -20,22 +20,27 @@ router.post('/', async function (req, res, next) {
             const db = getDbReference()
             const email = req.body.email
             const collection = db.collection('users')
+            const check_first = await collection
+            .find({})
+            .toArray()
+            //console.log("check_first===", check_first)
             const results = await collection
             .find({ email: email })
             .toArray()
-            if (results[0]){
+            if (check_first.length == 0){
+                user.role = "admin"
+            } 
+            if (results[0] || (user.role == "admin" && check_first.length != 0)){
                 res.status(400).json({
-                    error: "email used"
+                    error: "user creat fail"
                 });
             }
             else{
                 user.password = await bcrypt.hash(user.password, 8);
                 const id = await insertNewUser(user)
+                //console.log("user===", user)
                 res.status(201).json({
                     id: id, 
-                    links: {
-                        user: `/user/${id}`
-                    }
                 });
             }
         }catch(err){
@@ -44,11 +49,45 @@ router.post('/', async function (req, res, next) {
         }
     } else {
         res.status(400).json({
-            error: "infomation lack"
+            error: "user creat fail"
         });
     }
   })
   
+  router.post('/admin',requireAuthentication, async function (req, res, next) {
+    if (validateAgainstSchema(req.body, UserSchema)) {
+        //console.log("body===", req.body);
+        try{
+            var user = extractValidFields(req.body, UserSchema);
+            const db = getDbReference()
+            const email = req.body.email
+            const collection = db.collection('users')
+            const results = await collection
+            .find({ email: email })
+            .toArray()
+            if (results[0] || req.admin !== "admin"){
+                res.status(400).json({
+                    error: "user creat fail"
+                });
+            }
+            else{
+                user.password = await bcrypt.hash(user.password, 8);
+                const id = await insertNewUser(user)
+               // console.log("user===", user)
+                res.status(201).json({
+                    id: id, 
+                });
+            }
+        }catch(err){
+            console.log("===error", err);
+            next()
+        }
+    } else {
+        res.status(400).json({
+            error: "user creat fail"
+        });
+    }
+  })
 
   router.post('/login', async function (req, res, next) {
     if (req.body && req.body.email && req.body.password) {
