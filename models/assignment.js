@@ -1,4 +1,4 @@
-const { ObjectId } = require('mongodb')
+const { ObjectId, GridFSBucket } = require('mongodb')
 //const bcrypt = require ('bycryptjs')
 const { extractValidFields } = require('../lib/validation')
 const { getDbReference } = require('../lib/mongo')
@@ -57,7 +57,6 @@ exports.getAssignmentSubmissions = async function(id){
   const db = getDbReference()
   const bucket = new GridFSBucket(db, {bucketName: 'submissions'})
   const results =  await bucket.find({ "metadata.assignmentId": id })
-  .toArray()
-
+    .toArray()
   return results
 }

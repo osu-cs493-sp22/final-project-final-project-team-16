@@ -1,7 +1,8 @@
 
 const bcrypt = require('bcryptjs')
 const fs = require('fs/promises')
-
+const crypto = require('crypto')
+const multer = require('multer')
 const router = require('express').Router()
 exports.router = router;
 
@@ -9,6 +10,28 @@ const { validateAgainstSchema, extractValidFields } = require('../lib/validation
 const { AssignmentSchema, insertNewAssignment, getAssignmentById, modifyAssignmentById, deleteAssignment, getAssignmentSubmissions } = require('../models/assignment')
 const { SubmissionsSchema, saveSubmissionFile } = require('../models/submission')
 const { requireAuthentication } = require('../lib/auth')
+const { getDbReference } = require('../lib/mongo')
+const { ObjectId } = require('mongodb')
+
+const fileTypes = {
+    'application/pdf': 'pdf',
+    'image/jpeg': 'jpg',
+    'image/png': 'png'
+  }
+  
+  const upload = multer({
+    storage: multer.diskStorage({
+      destination: `${__dirname}/uploads`,
+      filename: function(req,file,callback){
+        const ext = fileTypes[file.mimetype]
+        const filename = crypto.pseudoRandomBytes(16).toString('hex')
+        callback(null,`${filename}.${ext}`)
+      }
+    }),
+    fileFilter: function(req,file,callback){
+      callback(null,!!fileTypes[file.mimetype])
+    }
+  })
 
 router.post('/', requireAuthentication, async function (req, res, next) { // Create a new Assignment
     if (validateAgainstSchema(req.body, AssignmentSchema)) {
@@ -74,17 +97,45 @@ router.get('/:id/submissions', requireAuthentication,  async function (req, res,
     try{
         const assignmentid = req.params.id
         const submissions = await getAssignmentSubmissions(assignmentid)
-        res.status(200).json(submissions);
+        res.status(200).send({
+            submissions: submissions
+        });
     }catch(err){
         next()
     }
 })
 
-router.post('/:id/submissions', async function (req, res) { // Create a new Submission for an Assignment (student)
+router.post('/:id/submissions', requireAuthentication, upload.single('file'),async function (req, res, next) { // Create a new Submission for an Assignment (student)
     console.log("==req.file:", req.file)
     console.log("==req.body:", req.body)
     if(req.file && validateAgainstSchema(req.body, SubmissionsSchema)){
-      try{
+        const db = getDbReference()
+        const user_id = req.body.studentId
+        const users_collection = db.collection('users')
+        const results = await users_collection
+            .find({ _id: new ObjectId(user_id) })
+            .toArray()
+        const assignmentscollection = db.collection('assignments')
+        const assignment_id = req.body.assignmentId
+        const results2 = await assignmentscollection
+            .find({ _id: new ObjectId(assignment_id) })
+            .toArray()
+        console.log("req.admin: ",req.admin)
+        //if the user isn't registered or is not an authorized student or assignement doesn't exist or someone else' token
+        if (results[0] == undefined || req.admin !== "student" || results2[0] == undefined || req.user !== req.body.studentId){
+            try{
+                if(results[0] == undefined){console.log("Student specified by studentId is not yet registered")}
+            }catch(err){
+                console.log("Error: Student specified by studentId is not yet registered")
+            }
+            if(req.admin !== "student"){console.log("Token says you aren't a student")} 
+            if(results2[0] == undefined){console.log("Assignment doesn't exist")}
+            if(req.user !== req.body.studentId){console.log("Can't use someone else' token")}
+            res.status(400).json({
+                error: "user cannot submit assignment"
+            });
+        }
+        try{
         const submission = {
           assignmentId: req.body.assignmentId,
           studentId: req.body.studentId,

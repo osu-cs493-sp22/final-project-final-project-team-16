@@ -106,7 +106,7 @@ router.post('/', async function (req, res, next) {
             )
             if (authenticated) {
                 //console.log("role===", user.role)
-                const token = generateAuthToken(req.body.id, user.role)
+                const token = generateAuthToken(user._id, user.role)
                 res.status(200).send({token : token})
             } else {
                 res.status(401).send({
