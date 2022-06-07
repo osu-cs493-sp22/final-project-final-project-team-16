@@ -1,0 +1,20 @@
+[
+    {
+        "name" : "admin" ,
+        "email" : "admin@gmail.com" ,
+        "password" : "password" ,
+        "role" : "admin"  
+    },
+    {
+        "name" : "instructor" ,
+        "email" : "instructor@gmail.com" ,
+        "password" : "password" ,
+        "role" : "instructor"  
+    },
+    {
+        "name" : "student" ,
+        "email" : "student@gmail.com" ,
+        "password" : "password" ,
+        "role" : "student"  
+    }
+]

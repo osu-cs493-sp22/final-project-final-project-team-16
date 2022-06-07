@@ -3,6 +3,7 @@ const morgan = require('morgan');
 
 const api = require('./api');
 const { connectToDb } = require('./lib/mongo')
+const { getImageDownloadStream } = require('./models/submission')
 
 const redis = require('redis');
 const res = require('express/lib/response');
@@ -73,6 +74,21 @@ app.use(rateLimit)
  * it provides all of the routes.
  */
 app.use('/', api);
+
+app.get('/media/uploads/:filename', function(req,res,next){
+  getImageDownloadStream(req.params.filename)
+    .on('file', function(file){
+      res.status(200).type(file.metadata.mimetype)
+    })
+    .on('error', function(err){
+      if(err.code === 'ENOENT'){
+        next()
+      }else{
+        next(err)
+      }
+    })
+    .pipe(res)
+})
 
 app.use('*', function (req, res, next) {
   res.status(404).json({
