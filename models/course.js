@@ -61,7 +61,7 @@ exports.getCourseById = getCourseById
 async function updateCourse(id, course) {
     const db = getDbReference()
     const collection = db.collection('courses')
-    const results = await collection.updateOne({_id: new ObjectId(id)}, { $set: course})
+    collection.update({_id: new ObjectId(id)}, { $set: course})
 }
 exports.updateCourse = updateCourse
 
@@ -75,3 +75,19 @@ async function deleteCourse(id) {
     return result.deletedCount > 0
 }
 exports.deleteCourse = deleteCourse
+
+async function getCourseAssignments(id) {
+    const db = getDbReference()
+    const collection = db.collection('courses')
+    const results = await collection.aggregate([
+    { $match: { _id: new ObjectId(id) } },
+    { $lookup: {
+      from: "assignments",
+      localField: "_id",
+      foreignField: "courseId",
+      as: "assignments"
+    }}
+    ]).toArray()
+    return results[0]
+}
+exports.getCourseAssignments = getCourseAssignments
