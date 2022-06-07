@@ -96,10 +96,17 @@ router.delete('/:id', requireAuthentication,  async function (req, res, next) { 
 router.get('/:id/submissions', requireAuthentication,  async function (req, res, next) { // Fetch the list of all Submissions for an Assignment
     try{
         const assignmentid = req.params.id
-        const submissions = await getAssignmentSubmissions(assignmentid)
-        res.status(200).send({
+        if (req.admin === "admin" || req.admin === "instructor"){
+            const submissions = await getAssignmentSubmissions(assignmentid)
+            res.status(200).send({
             submissions: submissions
         });
+        }
+        else{
+            res.status(400).json({
+                error: "user cannot see list of submissions for the assignment"
+            });
+        }
     }catch(err){
         next()
     }
