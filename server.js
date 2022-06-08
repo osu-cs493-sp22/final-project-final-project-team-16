@@ -6,7 +6,7 @@ const { connectToDb } = require('./lib/mongo')
 const { getImageDownloadStream } = require('./models/submission')
 
 const redis = require('redis');
-const res = require('express/lib/response');
+const { checkAuthentication } = require('./lib/auth');
 
 const redisHost = process.env.REDIS_HOST || 'redis-server'
 const redisPort = process.env.REDIS_PORT || 6379
@@ -29,43 +29,77 @@ const rateLimitAuth = 30
 const rateLimitWindowMs = 60000
 
 async function rateLimit(req, res ,next) {
-  const ip = req.ip
-  let tokenBucket
-  try {
-    tokenBucket = await redisClient.hGetAll(ip)
-  } catch (e) {
-    next()
-    return
-  }
-  console.log("== tokenBucket:", tokenBucket)
-  tokenBucket = {
-    tokens: parseFloat(tokenBucket.tokens) || rateLimitNoAuth,
-    last: parseInt(tokenBucket.last) || Date.now()
-  }
-  console.log("== tokenBucket:", tokenBucket)
+  if(checkAuthentication(req, res, next)) {
+    console.log("NOT USING IP")
+    const user = req.user
+    let tokenBucket
+    try {
+      tokenBucket = await redisClient.hGetAll(user)
+    } catch (e) {
+      next()
+      return
+    }
+    console.log("== tokenBucket:", tokenBucket)
+    tokenBucket = {
+      tokens: parseFloat(tokenBucket.tokens) || rateLimitAuth,
+      last: parseInt(tokenBucket.last) || Date.now()
+    }
+    console.log("== tokenBucket:", tokenBucket)
 
-  const now = Date.now()
-  const ellapsedMs = now - tokenBucket.last
-  tokenBucket.tokens += ellapsedMs * (rateLimitNoAuth / rateLimitWindowMs)
-  tokenBucket.tokens = Math.min(rateLimitNoAuth, tokenBucket.tokens)
-  tokenBucket.last = now
+    const now = Date.now()
+    const ellapsedMs = now - tokenBucket.last
+    tokenBucket.tokens += ellapsedMs * (rateLimitAuth / rateLimitWindowMs)
+    tokenBucket.tokens = Math.min(rateLimitAuth, tokenBucket.tokens)
+    tokenBucket.last = now
 
-  if (tokenBucket.tokens >= 1) {
-    tokenBucket.tokens -= 1
-    await redisClient.hSet(ip, [['tokens', tokenBucket.tokens], ['last', tokenBucket.last]])
-    // await redisClient.hSet(ip)
-    next()
+    if (tokenBucket.tokens >= 1) {
+      tokenBucket.tokens -= 1
+      await redisClient.hSet(user, [['tokens', tokenBucket.tokens], ['last', tokenBucket.last]])
+      // await redisClient.hSet(ip)
+      next()
+    } else {
+      await redisClient.hSet(user, [['tokens', tokenBucket.tokens], ['last', tokenBucket.last]])
+      // await redisClient.hSet(ip)
+      res.status(429).send({
+        err: "Too many requests per minute"
+      })
+    }
   } else {
-    await redisClient.hSet(ip, [['tokens', tokenBucket.tokens], ['last', tokenBucket.last]])
-    // await redisClient.hSet(ip)
-    res.status(429).send({
-      err: "Too many requests per minute"
-    })
+    const ip = req.ip
+    let tokenBucket
+    try {
+      tokenBucket = await redisClient.hGetAll(ip)
+    } catch (e) {
+      next()
+      return
+    }
+    console.log("== tokenBucket:", tokenBucket)
+    tokenBucket = {
+      tokens: parseFloat(tokenBucket.tokens) || rateLimitNoAuth,
+      last: parseInt(tokenBucket.last) || Date.now()
+    }
+    console.log("== tokenBucket:", tokenBucket)
+
+    const now = Date.now()
+    const ellapsedMs = now - tokenBucket.last
+    tokenBucket.tokens += ellapsedMs * (rateLimitNoAuth / rateLimitWindowMs)
+    tokenBucket.tokens = Math.min(rateLimitNoAuth, tokenBucket.tokens)
+    tokenBucket.last = now
+
+    if (tokenBucket.tokens >= 1) {
+      tokenBucket.tokens -= 1
+      await redisClient.hSet(ip, [['tokens', tokenBucket.tokens], ['last', tokenBucket.last]])
+      // await redisClient.hSet(ip)
+      next()
+    } else {
+      await redisClient.hSet(ip, [['tokens', tokenBucket.tokens], ['last', tokenBucket.last]])
+      // await redisClient.hSet(ip)
+      res.status(429).send({
+        err: "Too many requests per minute"
+      })
+    }
   }
-
-
 }
-
 app.use(rateLimit)
 
 /*

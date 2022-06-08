@@ -5,7 +5,7 @@ exports.router = router;
 
 const { requireAuthentication } = require('../lib/auth');
 const { validateAgainstSchema } = require('../lib/validation')
-const { courseSchema, getCoursesPage, insertNewCourse, getCourseById, updateCourse, deleteCourse, getCourseAssignments, enrollStudents} = require('../models/course')
+const { courseSchema, getCoursesPage, insertNewCourse, getCourseById, updateCourse, deleteCourse, getCourseAssignments, enrollStudents, getStudentsFromCourse} = require('../models/course')
 
 router.get('/', async (req, res) => {
     try {
@@ -94,17 +94,43 @@ router.delete('/:courseId', async function (req, res, next) {
     }
 })
 
+router.get('/:courseId/students', async function (req, res, next) {
+    const id = req.params.courseId
+    const roster = await getStudentsFromCourse(id)
+    if(roster) {
+        res.status(200).send(roster.students)
+    } else {
+        next()
+    }
+})
+
+router.post ('/:courseId/students', async function (req, res, next) {
+    const id = req.params.courseId
+    const enrollList = req.body
+    const addedStudents = await enrollStudents(id, req.body)
+    if(addedStudents) {
+        res.status(200).end()
+    } else {
+        next()
+    }
+})
+
 router.get('/:courseId/roster', requireAuthentication, async function(req, res, next){
     try{
-        const course = await getCourseById(req.params.courseId)
+        const id = req.params.courseId
+        const course = await getStudentsFromCourse(id)
+        console.log(course)
         if (course) {
-            if(req.admin == "instructor" || req.admin == "admin" && req.user == course.instructorId){
+            if(req.admin == "admin" || req.admin == "instructor" && req.user == course.instructorId){
+                console.log("PASSED TEST")
                 var ws = fs.createWriteStream('./out.csv')
+                console.log("WS CREATED")
                 fastcsv
-                    .write(course.roster, { headers: true })
+                    .write(course.students, { headers: true })
                     .pipe(ws)
-            
+                console.log("CSV PASSED")
                 var rs = fs.createReadStream('./out.csv')
+                console.log("READSTREAM PASSED")
                 rs.pipe(res)
             }else{
                 req.status(403).end()
@@ -113,16 +139,6 @@ router.get('/:courseId/roster', requireAuthentication, async function(req, res, 
             next();
         }
     }catch(err){
-        next()
-    }
-//router.get
-router.post ('/:courseId/students', async function (req, res, next) {
-    const id = req.params.courseId
-    const enrollList = req.body
-    const addedStudents = await enrollStudents(id, req.body)
-    if(addedStudents) {
-        res.status(200).send(addedStudents)
-    } else {
         next()
     }
 })
