@@ -36,14 +36,18 @@ const fileTypes = {
 router.post('/', requireAuthentication, async function (req, res, next) { // Create a new Assignment
     if (validateAgainstSchema(req.body, AssignmentSchema)) {
         try{
-            const assignment = extractValidFields(req.body, AssignmentSchema);
-            const id = await insertNewAssignment(assignment)
-            res.status(201).json({
-                id: id, 
-                links: {
-                    assignment: `/assignments/${id}`
-                }
-            });
+            if(req.admin == "admin" || req.admin == "instructor"){
+                const assignment = extractValidFields(req.body, AssignmentSchema);
+                const id = await insertNewAssignment(assignment)
+                res.status(201).json({
+                    id: id, 
+                    links: {
+                        assignment: `/assignments/${id}`
+                    }
+                });
+            }else{
+                res.status(403).end();
+            }
         }catch(err){
             next()
         }
@@ -70,14 +74,18 @@ router.get('/:id',  async function (req, res, next) { // Fetch data about a spec
 
 router.patch('/:id', requireAuthentication,  async function (req, res, next) { // Update data for a specific Assignment
     try{
-        const assignmentid = req.params.id
-        const updateAssignment = req.body
-        await modifyAssignmentById(assignmentid, updateAssignment)
-        res.status(200).json({
-            links: {
-                assignment: `/assignments/${assignmentid}`
-            }
-        });
+        if(req.admin == "admin" || req.admin == "instructor"){
+            const assignmentid = req.params.id
+            const updateAssignment = req.body
+            await modifyAssignmentById(assignmentid, updateAssignment)
+            res.status(200).json({
+                links: {
+                    assignment: `/assignments/${assignmentid}`
+                }
+            });
+        }else{
+            res.status(403).end();
+        }
     }catch(err){
         next()
     }
@@ -85,8 +93,12 @@ router.patch('/:id', requireAuthentication,  async function (req, res, next) { /
 
 router.delete('/:id', requireAuthentication,  async function (req, res, next) { // Remove a specific Assignent from the database
     try{
-        const assignmentid = req.params.id
-        await deleteAssignment(assignmentid)
+        if(req.admin == "admin" || req.admin == "instructor"){
+            const assignmentid = req.params.id
+            await deleteAssignment(assignmentid)
+        }else{
+            res.status(403).end();
+        }
     }catch(err){
         next()
     }
