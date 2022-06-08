@@ -1,3 +1,5 @@
+const fastcsv = require('fast-csv')
+const fs = require('fs')
 const router = require('express').Router()
 exports.router = router;
 
@@ -92,6 +94,27 @@ router.delete('/:courseId', async function (req, res, next) {
     }
 })
 
+router.get('/:courseId/roster', requireAuthentication, async function(req, res, next){
+    try{
+        const course = await getCourseById(req.params.courseId)
+        if (course) {
+            if(req.admin == "instructor" || req.admin == "admin" && req.user == course.instructorId){
+                var ws = fs.createWriteStream('./out.csv')
+                fastcsv
+                    .write(course.roster, { headers: true })
+                    .pipe(ws)
+            
+                var rs = fs.createReadStream('./out.csv')
+                rs.pipe(res)
+            }else{
+                req.status(403).end()
+            }
+        } else {
+            next();
+        }
+    }catch(err){
+        next()
+    }
 //router.get
 router.post ('/:courseId/students', async function (req, res, next) {
     const id = req.params.courseId
@@ -103,7 +126,6 @@ router.post ('/:courseId/students', async function (req, res, next) {
         next()
     }
 })
-//router.get
 
 router.get('/:courseId/assignments', async function (req, res, next) {
         const id = req.params.courseId
