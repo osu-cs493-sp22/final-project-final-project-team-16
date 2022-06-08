@@ -43,6 +43,7 @@ async function insertNewCourse(course) {
     const db = getDbReference()
     const collection = db.collection('courses')
     course = extractValidFields(course, courseSchema)
+    
     const result = await collection.insertOne(course)
     return result.insertedId 
 }
@@ -80,10 +81,10 @@ async function getCourseAssignments(id) {
     const db = getDbReference()
     const collection = db.collection('courses')
     const results = await collection.aggregate([
-    { $match: { _id: new ObjectId(id) } },
+    { "$addFields": { "stringId": { "$toString": "$_id" }} },
     { $lookup: {
       from: "assignments",
-      localField: "_id",
+      localField: "stringId",
       foreignField: "courseId",
       as: "assignments"
     }}
@@ -91,3 +92,32 @@ async function getCourseAssignments(id) {
     return results[0]
 }
 exports.getCourseAssignments = getCourseAssignments
+
+async function enrollStudents(id, enrollList) {
+    var results = null
+    var results2 = null
+    const db = getDbReference()
+    console.log(enrollList.add)
+    console.log(enrollList.remove)
+    const collection = db.collection('courses')
+    if(enrollList.add && enrollList.add.length) {
+        results = await collection.updateOne(
+            {_id: new ObjectId(id)},
+            {$push: {enrolled: { $each: enrollList.add} }}
+        )
+    }
+    if(enrollList.remove && enrollList.remove.length) {
+        results2 = await collection.updateOne(
+            {_id: new ObjectId(id)},
+            {$pull: {enrolled: { $in: enrollList.remove}}}
+        ) 
+    }
+    if (results && results2) {
+        return (results.matchedCount || results2.matchedCount) > 0
+    } else if (!results && results2) {
+        return (results2.matchedCount) > 0
+    } else {
+        return (results.matchedCount) > 0
+    }
+}
+exports.enrollStudents = enrollStudents

@@ -3,7 +3,7 @@ exports.router = router;
 
 const { requireAuthentication } = require('../lib/auth');
 const { validateAgainstSchema } = require('../lib/validation')
-const { courseSchema, getCoursesPage, insertNewCourse, getCourseById, updateCourse, deleteCourse, getCourseAssignments} = require('../models/course')
+const { courseSchema, getCoursesPage, insertNewCourse, getCourseById, updateCourse, deleteCourse, getCourseAssignments, enrollStudents} = require('../models/course')
 
 router.get('/', async (req, res) => {
     try {
@@ -93,15 +93,23 @@ router.delete('/:courseId', async function (req, res, next) {
 })
 
 //router.get
-//router.post
+router.post ('/:courseId/students', async function (req, res, next) {
+    const id = req.params.courseId
+    const enrollList = req.body
+    const addedStudents = await enrollStudents(id, req.body)
+    if(addedStudents) {
+        res.status(200).send(addedStudents)
+    } else {
+        next()
+    }
+})
 //router.get
 
 router.get('/:courseId/assignments', async function (req, res, next) {
         const id = req.params.courseId
-        console.log(id)
         const assignments = await getCourseAssignments(id)
         if(assignments) {
-            res.status(200).json(assignments);
+            res.status(200).json(assignments.assignments);
         } else {
             next()
         }
