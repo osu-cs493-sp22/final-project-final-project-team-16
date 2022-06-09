@@ -12,6 +12,11 @@ const courseSchema = {
 }
 exports.courseSchema = courseSchema
 
+const enrollSchema = {
+    add: { required: false},
+    remove: { required: false}
+}
+
 //Returns a page of courses
 async function getCoursesPage(page) {
     const db = getDbReference()
