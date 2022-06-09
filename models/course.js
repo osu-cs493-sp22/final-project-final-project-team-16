@@ -110,6 +110,7 @@ async function enrollStudents(id, enrollList) {
     if(enrollList.add && enrollList.add.length) {
         for(var i = 0; i < enrollList.add.length; i++) {
             objectIdAdd[i] = new ObjectId(enrollList.add[i])
+            addEnrolled(enrollList.add[i],id)
         }
         results = await collection.updateOne(
             {_id: new ObjectId(id)},
