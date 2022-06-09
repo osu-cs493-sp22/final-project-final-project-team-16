@@ -10,7 +10,7 @@ const courseSchema = {
     title: { required: true },
     term: { required: true },
     instructorId: { required: true }
-}}
+}
 exports.courseSchema = courseSchema
 
 const enrollSchema = {
