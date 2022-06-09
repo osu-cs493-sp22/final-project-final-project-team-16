@@ -129,12 +129,12 @@ router.get('/:id/submissions', requireAuthentication,  async function (req, res,
                 const assignmentPage = await getAssignmentSubmissions(parseInt(req.query.page) || 1, assignmentid)
                 assignmentPage.links = {}
             if (assignmentPage.page < assignmentPage.totalPages) {
-                assignmentPage.links.nextPage = `/assignments?page=${assignmentPage.page + 1}`
-                assignmentPage.links.lastPage = `/assignments?page=${assignmentPage.totalPages}`
+                assignmentPage.links.nextPage = `/assignments/${assignmentid}/submissions?page=${assignmentPage.page + 1}`
+                assignmentPage.links.lastPage = `/assignments/${assignmentid}/submissions?page=${assignmentPage.totalPages}`
             }
             if (assignmentPage.page > 1) {
-                assignmentPage.links.prevPage = `/assignments?page=${assignmentPage.page - 1}`
-                assignmentPage.links.firstPage = '/assignments?page=1'
+                assignmentPage.links.prevPage = `/assignments/${assignmentid}/submissions?page=${assignmentPage.page - 1}`
+                assignmentPage.links.firstPage = `/assignments/${assignmentid}/submissions?page=1`
             }
             res.status(200).send(assignmentPage)
         } catch (err) {
