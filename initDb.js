@@ -18,8 +18,10 @@
 
 const { connectToDb, getDbReference, closeDbConnection } = require('./lib/mongo')
 const { bulkInsertNewUsers } = require('./models/user')
+const { bulkInsertNewCourses } = require('./models/course')
 
 const userData = require('./data/users.json')
+const courseData = require('./data/courses.json')
 
 const mongoCreateUser = process.env.MONGO_CREATE_USER
 const mongoCreatePassword = process.env.MONGO_CREATE_PASSWORD
@@ -30,6 +32,9 @@ connectToDb(async function () {
    */
   const ids = await bulkInsertNewUsers(userData)
   console.log("== Inserted users with IDs:", ids)
+
+  const courseids = await bulkInsertNewCourses(courseData)
+  console.log("== Inserted courses with IDs:", courseids)
 
   /*
    * Create a new, lower-privileged database user if the correct environment

@@ -1,9 +1,14 @@
+const fastcsv = require('fast-csv')
+const fs = require('fs')
 const router = require('express').Router()
 exports.router = router;
 
+const { requireAuthentication } = require('../lib/auth');
 const { validateAgainstSchema } = require('../lib/validation')
-const { courseSchema, getCoursesPage, insertNewCourse, getCourseById, updateCourse, deleteCourse} = require('../models/course')
+const { courseSchema, enrollSchema, getCoursesPage, insertNewCourse, getCourseById, updateCourse, 
+        deleteCourse, getCourseAssignments, enrollStudents, getStudentsFromCourse} = require('../models/course')
 
+//Get a list of all courses, 10 courses listed per page
 router.get('/', async (req, res) => {
     try {
         const coursesPage = await getCoursesPage(parseInt(req.query.page) || 1)
@@ -26,10 +31,12 @@ router.get('/', async (req, res) => {
 })
 
 //Add a new course to the database
-router.post('/', async function (req, res, next) {
-    //
-    //Validate if user is an admin here
-    //
+router.post('/', requireAuthentication, async function (req, res, next) {
+    if(!req.admin) {
+        res.status(403).send({
+            error: "Unathorized to access the specified resource"
+        })
+    }
     if(validateAgainstSchema(req.body, courseSchema)) {
         const id = await insertNewCourse(req.body)
         res.status(201).json({
@@ -45,6 +52,7 @@ router.post('/', async function (req, res, next) {
     }
 })
 
+//Get information about a course from its Id
 router.get('/:courseId', async function (req, res, next) {
     const course = await getCourseById(req.params.courseId)
     if (course) {
@@ -54,34 +62,115 @@ router.get('/:courseId', async function (req, res, next) {
     }
 })
 
-router.patch('/:courseId', async function (req, res, next) {
-    //
-    // Validate user here
-    //
-    try {
-        const updateSuccessful = await updateCourse(req.params.courseId, req.body);
-        if (updateSuccessful) {
-            res.status(200).json({
-                links: {
-                    course: `/courses/${req.params.courseId}`
-                }
+//Update course info
+router.patch('/:courseId', requireAuthentication, async function (req, res, next) {
+    try{
+        const courseid = req.params.courseId
+        const updatecourse = req.body
+        const course = await getCourseById(req.params.courseId)
+        if(!(req.admin == "admin") && !(req.admin == "instructor" && req.user == course.instructorId)) {
+            res.status(403).send({
+                error: "Unathorized to access the specified resource"
             })
-        } else {
-            next()
         }
-    } catch(err) {
+        await updateCourse(courseid, updatecourse)
+        res.status(200).json({
+            links: {
+                assignment: `/courses/${courseid}`
+            }
+        });
+    }catch(err){
         next()
     }
 })
 
-router.delete('/:courseId', async function (req, res, next) {
-    //
-    // validate user here
-    //
+//Delete a course from the database
+router.delete('/:courseId', requireAuthentication, async function (req, res, next) {
+    if(!(req.admin == "admin")) {
+        res.status(403).send({
+            error: "Unathorized to access the specified resource"
+        })
+        return
+    }
     const deleteSucess = await deleteCourse(req.params.courseId)
     if (deleteSucess) {
         res.status(204).end()
     } else {
         next()
     }
+})
+
+//Return all students enrolled in the course
+router.get('/:courseId/students', requireAuthentication, async function (req, res, next) {
+    const id = req.params.courseId
+    const course = await getStudentsFromCourse(id)
+    if(!(req.admin == "admin") && !(req.admin == "instructor" && req.user == course.instructorId)) {
+        res.status(403).send({
+            error: "Unathorized to access the specified resource"
+        })
+    }
+    if(course) {
+        res.status(200).send(course.students)
+    } else {
+        next()
+    }
+})
+
+//Enroll or remove students from the course
+router.post ('/:courseId/students', requireAuthentication, async function (req, res, next) {
+  //  if(validateAgainstSchema(req.body, enrollSchema)) {
+        const id = req.params.courseId
+        const enrollList = req.body
+        const course = await getCourseById(req.params.courseId)
+        const addedStudents = await enrollStudents(id, req.body)
+        if(!(req.admin == "admin") && !(req.admin == "instructor" && req.user == course.instructorId)) {
+            res.status(403).send({
+                error: "Unathorized to access the specified resource"
+            })
+        }
+        if(addedStudents) {
+            res.status(200).end()
+        } else {
+            next()
+        }
+ /*   } else {
+        res.status(400).json({
+            error: "Request body is not correct to enroll students"
+        })      
+    } */
+})
+
+//Return a csv containing students enrolled in a course
+router.get('/:courseId/roster', requireAuthentication, async function(req, res, next){
+    try{
+        const id = req.params.courseId
+        const course = await getStudentsFromCourse(id)
+        if (course) {
+            if(req.admin == "admin" || (req.admin == "instructor" && req.user == course.instructorId)){
+                var ws = fs.createWriteStream('./out.csv')
+                fastcsv
+                    .write(course.students, { headers: true })
+                    .pipe(ws)
+                var rs = fs.createReadStream('./out.csv')
+                rs.pipe(res)
+            }else{
+                req.status(403).end()
+            }
+        } else {
+            next();
+        }
+    }catch(err){
+        next()
+    }
+})
+
+//Return all assignments for a specific course
+router.get('/:courseId/assignments', async function (req, res, next) {
+        const id = req.params.courseId
+        const assignments = await getCourseAssignments(id)
+        if(assignments) {
+            res.status(200).json(assignments.assignments);
+        } else {
+            next()
+        }
 })

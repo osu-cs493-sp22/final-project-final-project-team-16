@@ -36,14 +36,18 @@ const fileTypes = {
 router.post('/', requireAuthentication, async function (req, res, next) { // Create a new Assignment
     if (validateAgainstSchema(req.body, AssignmentSchema)) {
         try{
-            const assignment = extractValidFields(req.body, AssignmentSchema);
-            const id = await insertNewAssignment(assignment)
-            res.status(201).json({
-                id: id, 
-                links: {
-                    assignment: `/assignments/${id}`
-                }
-            });
+            if(req.admin == "admin" || req.admin == "instructor"){
+                const assignment = extractValidFields(req.body, AssignmentSchema);
+                const id = await insertNewAssignment(assignment)
+                res.status(201).json({
+                    id: id, 
+                    links: {
+                        assignment: `/assignments/${id}`
+                    }
+                });
+            }else{
+                res.status(403).end();
+            }
         }catch(err){
             next()
         }
@@ -70,14 +74,18 @@ router.get('/:id',  async function (req, res, next) { // Fetch data about a spec
 
 router.patch('/:id', requireAuthentication,  async function (req, res, next) { // Update data for a specific Assignment
     try{
-        const assignmentid = req.params.id
-        const updateAssignment = req.body
-        await modifyAssignmentById(assignmentid, updateAssignment)
-        res.status(200).json({
-            links: {
-                assignment: `/assignments/${assignmentid}`
-            }
-        });
+        if(req.admin == "admin" || req.admin == "instructor"){
+            const assignmentid = req.params.id
+            const updateAssignment = req.body
+            await modifyAssignmentById(assignmentid, updateAssignment)
+            res.status(200).json({
+                links: {
+                    assignment: `/assignments/${assignmentid}`
+                }
+            });
+        }else{
+            res.status(403).end();
+        }
     }catch(err){
         next()
     }
@@ -85,8 +93,12 @@ router.patch('/:id', requireAuthentication,  async function (req, res, next) { /
 
 router.delete('/:id', requireAuthentication,  async function (req, res, next) { // Remove a specific Assignent from the database
     try{
-        const assignmentid = req.params.id
-        await deleteAssignment(assignmentid)
+        if(req.admin == "admin" || req.admin == "instructor"){
+            const assignmentid = req.params.id
+            await deleteAssignment(assignmentid)
+        }else{
+            res.status(403).end();
+        }
     }catch(err){
         next()
     }
@@ -94,7 +106,7 @@ router.delete('/:id', requireAuthentication,  async function (req, res, next) { 
 })
 
 router.get('/:id/submissions', requireAuthentication,  async function (req, res, next) { // Fetch the list of all Submissions for an Assignment
-    try{
+    /*try{
         const assignmentid = req.params.id
         if (req.admin === "admin" || req.admin === "instructor"){
             const submissions = await getAssignmentSubmissions(assignmentid)
@@ -109,6 +121,32 @@ router.get('/:id/submissions', requireAuthentication,  async function (req, res,
         }
     }catch(err){
         next()
+    }*/
+    
+    if(req.admin === "admin" || req.admin === "instructor"){
+        try {
+                const assignmentid = req.params.id
+                const assignmentPage = await getAssignmentSubmissions(parseInt(req.query.page) || 1, assignmentid)
+                assignmentPage.links = {}
+            if (assignmentPage.page < assignmentPage.totalPages) {
+                assignmentPage.links.nextPage = `/assignments/${assignmentid}/submissions?page=${assignmentPage.page + 1}`
+                assignmentPage.links.lastPage = `/assignments/${assignmentid}/submissions?page=${assignmentPage.totalPages}`
+            }
+            if (assignmentPage.page > 1) {
+                assignmentPage.links.prevPage = `/assignments/${assignmentid}/submissions?page=${assignmentPage.page - 1}`
+                assignmentPage.links.firstPage = `/assignments/${assignmentid}/submissions?page=1`
+            }
+            res.status(200).send(assignmentPage)
+        } catch (err) {
+            console.error(err)
+            res.status(500).send({
+            error: "Error fetching submissions list.  Please try again later."
+            })
+        }
+    }else{
+            res.status(400).json({
+                error: "user cannot see list of submissions for the assignment"
+            });
     }
 })
 
