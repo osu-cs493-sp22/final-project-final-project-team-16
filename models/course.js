@@ -150,3 +150,16 @@ async function getStudentsFromCourse(id) {
     return results[0]
 }
 exports.getStudentsFromCourse = getStudentsFromCourse
+
+async function bulkInsertNewCourses(courses) {
+
+    const coursesToInsert = courses.map(function (user) {
+      return extractValidFields(user, courseSchema)
+    })
+
+    const db = getDbReference()
+    const collection = db.collection('courses')
+    const result = await collection.insertMany(coursesToInsert)
+    return result.insertedIds
+}
+exports.bulkInsertNewCourses = bulkInsertNewCourses
