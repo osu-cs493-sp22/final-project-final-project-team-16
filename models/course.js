@@ -12,6 +12,11 @@ const courseSchema = {
 }
 exports.courseSchema = courseSchema
 
+const enrollSchema = {
+    add: { required: false},
+    remove: { required: false}
+}
+
 //Returns a page of courses
 async function getCoursesPage(page) {
     const db = getDbReference()
@@ -96,20 +101,28 @@ exports.getCourseAssignments = getCourseAssignments
 async function enrollStudents(id, enrollList) {
     var results = null
     var results2 = null
+    var objectIdAdd = []
+    var objectIdRemove = []
     const db = getDbReference()
     console.log(enrollList.add)
     console.log(enrollList.remove)
     const collection = db.collection('courses')
     if(enrollList.add && enrollList.add.length) {
+        for(var i = 0; i < enrollList.add.length; i++) {
+            objectIdAdd[i] = new ObjectId(enrollList.add[i])
+        }
         results = await collection.updateOne(
             {_id: new ObjectId(id)},
-            {$push: {enrolled: { $each: enrollList.add} }}
+            {$push: {enrolled: { $each: objectIdAdd} }}
         )
     }
     if(enrollList.remove && enrollList.remove.length) {
+        for(var i = 0; i < enrollList.remove.length; i++) {
+            objectIdRemove[i] = new ObjectId(enrollList.remove[i])
+        }
         results2 = await collection.updateOne(
             {_id: new ObjectId(id)},
-            {$pull: {enrolled: { $in: enrollList.remove}}}
+            {$pull: {enrolled: { $in: objectIdRemove}}}
         ) 
     }
     if (results && results2) {
@@ -121,3 +134,19 @@ async function enrollStudents(id, enrollList) {
     }
 }
 exports.enrollStudents = enrollStudents
+
+async function getStudentsFromCourse(id) {
+    const db = getDbReference()
+    const collection = db.collection('courses')
+    const results = await collection.aggregate([
+        {$match: {_id: new ObjectId(id)}},
+        {$lookup: {
+            from: "users",
+            localField: "enrolled",
+            foreignField: "_id",
+            as: "students"
+        }}
+    ]).toArray()
+    return results[0]
+}
+exports.getStudentsFromCourse = getStudentsFromCourse
