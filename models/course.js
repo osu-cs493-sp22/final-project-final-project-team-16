@@ -2,7 +2,7 @@ const {ObjectId} = require ('mongodb')
 
 const { getDbReference } = require('../lib/mongo')
 const { extractValidFields } = require('../lib/validation')
-const { UserSchema,addEnrolled } = require('../models/user')
+const { removeEnrolled,addEnrolled } = require('../models/user')
 
 const courseSchema = {
     subject: { required: true },
@@ -123,6 +123,7 @@ async function enrollStudents(id, enrollList) {
     if(enrollList.remove && enrollList.remove.length) {
         for(var i = 0; i < enrollList.remove.length; i++) {
             objectIdRemove[i] = new ObjectId(enrollList.remove[i])
+            removeEnrolled(enrollList.remove[i],id)
         }
         results2 = await collection.updateOne(
             {_id: new ObjectId(id)},
