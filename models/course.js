@@ -2,6 +2,7 @@ const {ObjectId} = require ('mongodb')
 
 const { getDbReference } = require('../lib/mongo')
 const { extractValidFields } = require('../lib/validation')
+const { UserSchema,addEnrolled } = require('../models/user')
 
 const courseSchema = {
     subject: { required: true },
@@ -112,6 +113,7 @@ async function enrollStudents(id, enrollList) {
     if(enrollList.add && enrollList.add.length) {
         for(var i = 0; i < enrollList.add.length; i++) {
             objectIdAdd[i] = new ObjectId(enrollList.add[i])
+            addEnrolled(enrollList.add[i],id)
         }
         results = await collection.updateOne(
             {_id: new ObjectId(id)},
@@ -152,3 +154,16 @@ async function getStudentsFromCourse(id) {
     return results[0]
 }
 exports.getStudentsFromCourse = getStudentsFromCourse
+
+async function bulkInsertNewCourses(courses) {
+
+    const coursesToInsert = courses.map(function (user) {
+      return extractValidFields(user, courseSchema)
+    })
+
+    const db = getDbReference()
+    const collection = db.collection('courses')
+    const result = await collection.insertMany(coursesToInsert)
+    return result.insertedIds
+}
+exports.bulkInsertNewCourses = bulkInsertNewCourses

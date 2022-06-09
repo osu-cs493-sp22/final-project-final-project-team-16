@@ -44,8 +44,8 @@ services:
     image: redis:latest
     restart: on-failure
     environment:
-      - REDIS_HOST = redis-server
-      - REDIS_PORT = 6379
+      - REDIS_HOST=redis-server
+      - REDIS_PORT=6379
     ports:
       - 6379:6379
 

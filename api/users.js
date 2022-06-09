@@ -129,7 +129,7 @@ router.post('/', async function (req, res, next) {
   router.get('/:userId',requireAuthentication, async function (req, res, next) {
     const db = getDbReference()
     const collection = db.collection('users')
-    const course_collection = db.collection('course')
+    const course_collection = db.collection('courses')
     var id_target = req.params.userId
     var id = req.user
     var user_target = null
@@ -164,8 +164,10 @@ router.post('/', async function (req, res, next) {
                 err: "Unauthorized to access the specified resource"
                 })
             }else {
-                const CourseResult = await collection
-                .find({ instructorId: id})
+                const CourseResult = await course_collection
+                .find({ 
+                    instructorId: id
+                })
                 .toArray()
                 res.status(200).json({
                     user : user_target,
