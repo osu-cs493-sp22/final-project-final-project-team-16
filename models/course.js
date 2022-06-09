@@ -113,22 +113,31 @@ async function enrollStudents(id, enrollList) {
     if(enrollList.add && enrollList.add.length) {
         for(var i = 0; i < enrollList.add.length; i++) {
             objectIdAdd[i] = new ObjectId(enrollList.add[i])
-            addEnrolled(enrollList.add[i],id)
         }
         results = await collection.updateOne(
             {_id: new ObjectId(id)},
             {$push: {enrolled: { $each: objectIdAdd} }}
         )
+        if (results) {
+            for(var i = 0; i < enrollList.add.length; i++) {
+                addEnrolled(enrollList.add[i],id)
+            }
+        }
     }
     if(enrollList.remove && enrollList.remove.length) {
         for(var i = 0; i < enrollList.remove.length; i++) {
             objectIdRemove[i] = new ObjectId(enrollList.remove[i])
-            removeEnrolled(enrollList.remove[i],id)
         }
         results2 = await collection.updateOne(
             {_id: new ObjectId(id)},
             {$pull: {enrolled: { $in: objectIdRemove}}}
         ) 
+        if (results2) {
+            for(var i = 0; i < enrollList.remove.length; i++) {
+                removeEnrolled(enrollList.remove[i],id)
+            }
+        }
+            
     }
     if (results && results2) {
         return (results.matchedCount || results2.matchedCount) > 0

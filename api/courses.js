@@ -121,17 +121,22 @@ router.post ('/:courseId/students', requireAuthentication, async function (req, 
   //  if(validateAgainstSchema(req.body, enrollSchema)) {
         const id = req.params.courseId
         const enrollList = req.body
-        const course = await getCourseById(req.params.courseId)
-        const addedStudents = await enrollStudents(id, req.body)
-        if(!(req.admin == "admin") && !(req.admin == "instructor" && req.user == course.instructorId)) {
-            res.status(403).send({
-                error: "Unathorized to access the specified resource"
-            })
-        }
-        if(addedStudents) {
-            res.status(200).end()
+        const course = await getCourseById(id)
+        console.log(course)
+        if(course === undefined) {
+           next()
         } else {
-            next()
+            const addedStudents = await enrollStudents(id, req.body)
+            if(!(req.admin == "admin") && !(req.admin == "instructor" && req.user == course.instructorId)) {
+                res.status(403).send({
+                    error: "Unathorized to access the specified resource"
+                })
+            }
+            if(addedStudents) {
+                res.status(200).end()
+            } else {
+                next()
+            }
         }
  /*   } else {
         res.status(400).json({
