@@ -36,6 +36,20 @@ exports.insertNewUser = async function (user) {
     collection.update({_id: new ObjectId(id)}, { $set: result[0]})
   }
 
+  exports.removeEnrolled = async function (id, course_id) {
+    const db = getDbReference()
+    const collection = db.collection('users')
+    const result = await collection
+    .find({ _id: new ObjectId(id) })
+    .toArray()
+    const user = result[0]
+    const index = result[0].enrolled.indexOf(course_id);
+    if (index > -1) {
+      result[0].enrolled.splice(index, 1);
+    }
+    collection.update({_id: new ObjectId(id)}, { $set: result[0]})
+  }
+
   async function bulkInsertNewUsers(users) {
 
     var arrayLength = users.length
