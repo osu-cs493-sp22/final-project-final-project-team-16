@@ -53,10 +53,41 @@ exports.deleteAssignment = async function (id){
   collection.deleteOne({_id: new ObjectId(id)})
 }
 
-exports.getAssignmentSubmissions = async function(id){
+exports.getAssignmentSubmissions = async function(page, id){
+  /*
   const db = getDbReference()
   const bucket = new GridFSBucket(db, {bucketName: 'submissions'})
   const results =  await bucket.find({ "metadata.assignmentId": id })
     .toArray()
   return results
+*/
+  
+  const db = getDbReference()
+  const bucket = new GridFSBucket(db, {bucketName: 'submissions'})
+  const assignments = await bucket.find({ "metadata.assignmentId": id })
+  .toArray()
+
+  const count = assignments.length
+  console.log("count: ",count)
+  
+
+  const pageSize = 1
+  const lastPage = Math.ceil(count / pageSize)
+  page = page > lastPage ? lastPage : page
+  page = page < 1 ? 1 : page
+  const offset = (page - 1) * pageSize
+
+  const results = await bucket.find({ "metadata.assignmentId": id })
+    .sort({ _id: 1 })
+    .skip(offset)
+    .limit(pageSize)
+    .toArray()
+
+  return {
+    submissions: results,
+    page: page,
+    totalPages: lastPage,
+    pageSize: pageSize,
+    count: count
+  }
 }
