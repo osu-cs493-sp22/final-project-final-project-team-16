@@ -106,7 +106,7 @@ router.delete('/:id', requireAuthentication,  async function (req, res, next) { 
 })
 
 router.get('/:id/submissions', requireAuthentication,  async function (req, res, next) { // Fetch the list of all Submissions for an Assignment
-    try{
+    /*try{
         const assignmentid = req.params.id
         if (req.admin === "admin" || req.admin === "instructor"){
             const submissions = await getAssignmentSubmissions(assignmentid)
@@ -121,6 +121,32 @@ router.get('/:id/submissions', requireAuthentication,  async function (req, res,
         }
     }catch(err){
         next()
+    }*/
+    
+    if(req.admin === "admin" || req.admin === "instructor"){
+        try {
+                const assignmentid = req.params.id
+                const assignmentPage = await getAssignmentSubmissions(parseInt(req.query.page) || 1, assignmentid)
+                assignmentPage.links = {}
+            if (assignmentPage.page < assignmentPage.totalPages) {
+                assignmentPage.links.nextPage = `/assignments/${assignmentid}/submissions?page=${assignmentPage.page + 1}`
+                assignmentPage.links.lastPage = `/assignments/${assignmentid}/submissions?page=${assignmentPage.totalPages}`
+            }
+            if (assignmentPage.page > 1) {
+                assignmentPage.links.prevPage = `/assignments/${assignmentid}/submissions?page=${assignmentPage.page - 1}`
+                assignmentPage.links.firstPage = `/assignments/${assignmentid}/submissions?page=1`
+            }
+            res.status(200).send(assignmentPage)
+        } catch (err) {
+            console.error(err)
+            res.status(500).send({
+            error: "Error fetching submissions list.  Please try again later."
+            })
+        }
+    }else{
+            res.status(400).json({
+                error: "user cannot see list of submissions for the assignment"
+            });
     }
 })
 
