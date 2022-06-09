@@ -2,6 +2,7 @@ const {ObjectId} = require ('mongodb')
 
 const { getDbReference } = require('../lib/mongo')
 const { extractValidFields } = require('../lib/validation')
+const { UserSchema,addEnrolled } = require('../models/user')
 
 const courseSchema = {
     subject: { required: true },
