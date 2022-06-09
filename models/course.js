@@ -104,9 +104,11 @@ async function enrollStudents(id, enrollList) {
     var objectIdAdd = []
     var objectIdRemove = []
     const db = getDbReference()
-    console.log(enrollList.add)
-    console.log(enrollList.remove)
     const collection = db.collection('courses')
+    //Messy but works
+    //Users are taken from the add and remove fields if they exist and
+    //moved into another array that turns the string Ids into objectIds
+    //Those objectIds are then removed or added to the enrolled array for the course
     if(enrollList.add && enrollList.add.length) {
         for(var i = 0; i < enrollList.add.length; i++) {
             objectIdAdd[i] = new ObjectId(enrollList.add[i])

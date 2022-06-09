@@ -32,7 +32,7 @@ router.get('/', async (req, res) => {
 
 //Add a new course to the database
 router.post('/', requireAuthentication, async function (req, res, next) {
-    if(!req.admin) {
+    if(!(req.admin == "admin")) {
         res.status(403).send({
             error: "Unathorized to access the specified resource"
         })
@@ -148,11 +148,15 @@ router.get('/:courseId/roster', requireAuthentication, async function(req, res, 
         if (course) {
             if(req.admin == "admin" || (req.admin == "instructor" && req.user == course.instructorId)){
                 var ws = fs.createWriteStream('./out.csv')
-                fastcsv
+                await fastcsv
                     .write(course.students, { headers: true })
                     .pipe(ws)
                 var rs = fs.createReadStream('./out.csv')
                 rs.pipe(res)
+                res.on('close', function() {
+                    ws.destroy()
+                    rs.destroy()
+                  })
             }else{
                 req.status(403).end()
             }
